@@ -1,0 +1,15 @@
+---
+- name: Backup all devices
+  hosts: all
+  gather_facts: no
+
+  tasks:
+    - name: Backup config
+      ansible.netcommon.cli_command:
+        command: show run
+      register: output
+
+    - name: Save backup to file
+      copy:
+        content: "{{ output.stdout }}"
+        dest: "backups/{{ inventory_hostname }}_{{ ansible_date_time.iso8601 }}.cfg"
