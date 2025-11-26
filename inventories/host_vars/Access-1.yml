@@ -1,2 +1,6 @@
 ansible_host: 192.168.0.250
 hostname: Access-1
+ansible_ssh_common_args: >-
+            -oHostKeyAlgorithms=+ssh-rsa
+            -oKexAlgorithms=+diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1
+            -oPubkeyAcceptedKeyTypes=+ssh-rsa
