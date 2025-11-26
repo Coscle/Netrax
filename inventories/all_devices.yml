@@ -2,12 +2,11 @@ all:
   children:
     nxos:
       hosts:
-        DC1-NXOS1: {}
-        DC1-NXOS2: {}
+        HQ-Core-N5K-1: {}
     ios:
       hosts:
-        BR1-R1: {}
-        BR1-R2: {}
-    asa:
-      hosts:
-        HQ-ASA: {}
+        Access-1: {}
+        
+    #asa:
+      #hosts:
+        #HQ-ASA: {}
