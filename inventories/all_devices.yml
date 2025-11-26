@@ -1,0 +1,13 @@
+all:
+  children:
+    nxos:
+      hosts:
+        DC1-NXOS1: {}
+        DC1-NXOS2: {}
+    ios:
+      hosts:
+        BR1-R1: {}
+        BR1-R2: {}
+    asa:
+      hosts:
+        HQ-ASA: {}
