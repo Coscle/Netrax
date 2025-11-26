@@ -6,4 +6,5 @@
   tasks:
     - name: hostname 변경 테스트
       cisco.nxos.nxos_hostname:
-        hostname: TEST-SWITCH
+        config:
+          hostname: TEST-NXOS-SUCCESS
