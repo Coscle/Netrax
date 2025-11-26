@@ -7,4 +7,4 @@
     - name: hostname 변경 테스트
       cisco.nxos.nxos_hostname:
         config:
-          hostname: TEST-NXOS-SUCCESS
+          hostname: Fucking Test Completed
