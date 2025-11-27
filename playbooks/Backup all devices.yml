@@ -30,7 +30,7 @@
     # 1-1) 공통 raw_config 변수로 정리
     - name: Set raw_config
       set_fact:
-        raw_config: "{{ backup.stdout[0] | default(backup.stdout) }}"
+        raw_config: "{{ backup.stdout | default(backup.stdout_lines | join('\n')) }}"
 
     # 1-2) NX-OS 정규화: 매번 바뀌는 헤더 제거
     - name: Normalize config for NX-OS
