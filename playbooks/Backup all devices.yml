@@ -5,7 +5,7 @@
 
   vars:
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    backup_dir: "/data/network-backups/{{ inventory_hostname }}"
+    backup_dir: "/var/lib/projects/backups/{{ inventory_hostname }}"
 
   tasks:
     - name: Backup config
