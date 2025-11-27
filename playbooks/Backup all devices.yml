@@ -12,6 +12,13 @@
       ansible.netcommon.cli_command:
         command: show run
       register: backup
+      
+    - name: Ensure backup directory exists
+      delegate_to: localhost
+      file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: '0755'
 
     - name: Save backup to file
       delegate_to: localhost
