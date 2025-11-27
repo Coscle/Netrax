@@ -2,7 +2,11 @@
 - name: Backup all devices
   hosts: all
   gather_facts: no
-
+  
+  vars:
+    backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+    backup_dir: "backups/{{ inventory_hostname }
+  
   tasks:
     - name: Backup config
       ansible.netcommon.cli_command:
@@ -10,6 +14,7 @@
       register: output
 
     - name: Save backup to file
+      delegate_to: localhost
       copy:
-        content: "{{ output.stdout }}"
-        dest: "backups/{{ inventory_hostname }}_{{ ansible_date_time.iso8601 }}.cfg"
+        content: "{{ backup.stdout[0] | default(backup.stdout) }}"
+        dest: "{{ backup_dir }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
