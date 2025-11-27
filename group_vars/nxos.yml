@@ -2,7 +2,3 @@ ansible_connection: network_cli
 ansible_network_os: cisco.nxos.nxos
 ansible_become: yes
 ansible_become_method: enable
-
-ansible_user: "{{ lookup('env', 'ANSIBLE_NET_USERNAME') | default(omit) }}"
-ansible_password: "{{ lookup('env', 'ANSIBLE_NET_PASSWORD') | default(omit) }}"
-ansible_become_password: "{{ lookup('env', 'ANSIBLE_NET_AUTH_PASS') | default(ansible_password) }}"
