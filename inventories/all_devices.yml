@@ -10,3 +10,6 @@ all:
     #asa:
       #hosts:
         #HQ-ASA: {}
+    backup_server:
+      hosts:
+        ubuntu-backup: {}
