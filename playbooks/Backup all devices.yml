@@ -1,19 +1,33 @@
 ---
-- name: Backup all devices
-  hosts: nxos:ios        # 장비들만 대상 (backup_server 그룹은 제외)
+- name: Backup all devices and notify on change
+  hosts: nxos:ios          # 장비들만 대상 (backup_server 그룹은 제외)
   gather_facts: no
 
   vars:
+    # 백업 파일명에 붙일 타임스탬프
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    backup_server: ubuntu-backup              # 인벤토리의 백업 서버 호스트명
-    backup_root: /data/network-backups        # 우분투 서버에 만들 디렉터리 루트
+
+    # 백업 서버 인벤토리 호스트명 (ubuntu-backup)
+    backup_server: ubuntu-backup
+
+    # 백업이 쌓일 루트 디렉터리 (우분투 서버 기준)
+    backup_root: /data/network-backups
+
+    # ===== SMTP / 알림 설정 =====
+    smtp_host: "smtp.gmail.com"      # 회사 SMTP 서버 주소
+    smtp_port: 587                     # 25, 465, 587 중 하나
+    smtp_user: "netrax99t@gmail.com"   # 필요 없으면 삭제
+    smtp_pass: "mlbblfzggsnzwkdp"            # 가능하면 나중에 Credential로 빼기
+    notify_mail_to: "genarain7@gmail.com"  # 알림 받을 메일 주소
 
   tasks:
+    # 1) 장비에서 running-config 가져오기
     - name: Backup config from device
       ansible.netcommon.cli_command:
         command: show run
       register: backup
 
+    # 2) 백업 디렉터리 생성 (우분투 백업 서버)
     - name: Ensure backup directory exists on backup server
       delegate_to: "{{ backup_server }}"
       file:
@@ -21,8 +35,81 @@
         state: directory
         mode: '0755'
 
+    # 3) 새 백업 파일 저장
     - name: Save backup file on backup server
       delegate_to: "{{ backup_server }}"
       copy:
         content: "{{ backup.stdout | default(backup.stdout_lines | join('\n')) }}"
         dest: "{{ backup_root }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
+      register: saved_backup
+
+    # 4) 이 장비의 기존 백업 파일 목록 조회
+    - name: Find existing backups for this device
+      delegate_to: "{{ backup_server }}"
+      find:
+        paths: "{{ backup_root }}/{{ inventory_hostname }}"
+        patterns: "*.cfg"
+        file_type: file
+      register: backup_files
+
+    # 5) mtime 기준으로 최신순 정렬 + 최신/이전 파일 변수로 정리
+    - name: Prepare backup file info
+      set_fact:
+        backups_sorted: "{{ backup_files.files | sort(attribute='mtime', reverse=True) }}"
+        latest_file:  "{{ (backup_files.files | sort(attribute='mtime', reverse=True))[0].path }}"
+        previous_file: >-
+          {{ (backup_files.files | sort(attribute='mtime', reverse=True))[1].path
+             if (backup_files.files | length) > 1 else None }}
+        is_first_backup: "{{ (backup_files.files | length) == 1 }}"
+
+    # 6) 이전 백업이 있을 때만 diff 수행
+    - name: Diff with previous backup
+      when: not is_first_backup
+      delegate_to: "{{ backup_server }}"
+      command: diff -u "{{ previous_file }}" "{{ latest_file }}"
+      register: diff_result
+      failed_when: diff_result.rc not in [0, 1]    # 0: 같음, 1: 다름, 그 외: 에러
+      changed_when: diff_result.rc == 1
+
+    # 7) 첫 백업일 때 보내는 메일 (baseline 생성 알림용)
+    - name: Send email for first backup
+      when: is_first_backup
+      delegate_to: "{{ backup_server }}"
+      mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_user | default(omit) }}"
+        password: "{{ smtp_pass | default(omit) }}"
+        to: "{{ notify_mail_to }}"
+        subject: "[NETRAX] {{ inventory_hostname }} 첫 백업 생성"
+        body: |
+          {{ inventory_hostname }} 장비의 첫 백업이 생성되었습니다.
+
+          백업 파일:
+            {{ latest_file }}
+
+          이 백업은 향후 변경 감지 기준이 되는 baseline 입니다.
+
+    # 8) 이전 백업과 내용이 달라졌을 때만 메일 발송
+    - name: Send email when config changed
+      when:
+        - not is_first_backup
+        - diff_result.rc == 1      # 0: 동일, 1: 차이 있음
+      delegate_to: "{{ backup_server }}"
+      mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_user | default(omit) }}"
+        password: "{{ smtp_pass | default(omit) }}"
+        to: "{{ notify_mail_to }}"
+        subject: "[NETRAX] {{ inventory_hostname }} 설정 변경 감지"
+        body: |
+          {{ inventory_hostname }} 장비에서 설정 변경이 감지되었습니다.
+
+          이전 백업: {{ previous_file }}
+          최신 백업: {{ latest_file }}
+
+          변경 내용 (diff -u):
+          ------------------------------------------------------------
+          {{ diff_result.stdout }}
+          ------------------------------------------------------------
