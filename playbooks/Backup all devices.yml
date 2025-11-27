@@ -62,7 +62,7 @@
              if (backup_files.files | length) > 1 else None }}
         is_first_backup: "{{ (backup_files.files | length) == 1 }}"
 
-    # 6-1) NX-OS – 헤더 줄 무시하고 diff
+    # 6-1) NX-OS – 헤더 줄 무시하고 diff (수정된 버전)
     - name: Diff with previous backup (NX-OS, ignore volatile header)
       when:
         - not is_first_backup
@@ -70,12 +70,20 @@
       delegate_to: "{{ backup_server }}"
       command: >
         bash -lc "
-        sed -E '/^\s*!Time:/d;/^\s*!Running configuration last done at:/d' '{{ previous_file }}' > /tmp/prev_{{ inventory_hostname }}.cfg &&
-        sed -E '/^\s*!Time:/d;/^\s*!Running configuration last done at:/d' '{{ latest_file }}'   > /tmp/last_{{ inventory_hostname }}.cfg &&
+        # 모든 휘발성 헤더 라인을 삭제
+        SED_CMD=\"/^\s*!Time:/d;/^\s*!Running configuration last done at:/d;/^\s*!Command:/d\" &&
+    
+        # 이전 파일에서 헤더 삭제 후 임시 저장
+        sed -E \"$SED_CMD\" '{{ previous_file }}' > /tmp/prev_{{ inventory_hostname }}.cfg &&
+        
+        # 최신 파일에서 헤더 삭제 후 임시 저장
+        sed -E \"$SED_CMD\" '{{ latest_file }}' > /tmp/last_{{ inventory_hostname }}.cfg &&
+        
+        # 순수한 구성 파일만 diff 비교
         diff -u /tmp/prev_{{ inventory_hostname }}.cfg /tmp/last_{{ inventory_hostname }}.cfg
         "
       register: diff_result
-      failed_when: diff_result.rc not in [0, 1]    # 0: 같음, 1: 다름, 그 외: 에러
+      failed_when: diff_result.rc not in [0, 1]
       changed_when: diff_result.rc == 1
 
     # 6-2) IOS 등 나머지 – 그대로 diff
