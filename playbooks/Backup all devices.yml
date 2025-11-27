@@ -2,17 +2,17 @@
 - name: Backup all devices
   hosts: all
   gather_facts: no
-  
+
   vars:
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    backup_dir: "/var/lib/awx/backup-configs/{{ inventory_hostname }}"
-  
+    backup_dir: "backups/{{ inventory_hostname }}"   # ← 장비별 폴더
+
   tasks:
     - name: Backup config
       ansible.netcommon.cli_command:
         command: show run
       register: backup
-      
+
     - name: Ensure backup directory exists
       delegate_to: localhost
       file:
