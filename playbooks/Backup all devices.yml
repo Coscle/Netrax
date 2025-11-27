@@ -27,6 +27,21 @@
         command: show run
       register: backup
 
+    # 1-1) 공통 raw_config 변수로 정리
+    - name: Set raw_config
+      set_fact:
+        raw_config: "{{ backup.stdout[0] | default(backup.stdout) }}"
+
+    # 1-2) NX-OS 정규화: 매번 바뀌는 헤더 제거
+    - name: Normalize config for NX-OS
+      when: "'nxos' in group_names"
+      set_fact:
+        normalized_config: >-
+          {{ raw_config.split('\n')
+             | reject('match', '^!Time:')
+             | reject('match', '^!Running configuration last done at:')
+             | join('\n') }}
+             
     # 2) 백업 디렉터리 생성 (우분투 백업 서버)
     - name: Ensure backup directory exists on backup server
       delegate_to: "{{ backup_server }}"
@@ -35,11 +50,19 @@
         state: directory
         mode: '0755'
 
-    # 3) 새 백업 파일 저장
+    # # 3) 새 백업 파일 저장
+    # - name: Save backup file on backup server
+    #   delegate_to: "{{ backup_server }}"
+    #   copy:
+    #     content: "{{ backup.stdout | default(backup.stdout_lines | join('\n')) }}"
+    #     dest: "{{ backup_root }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
+    #   register: saved_backup
+
+    # 3) 정규화된 내용으로 새 백업 파일 저장
     - name: Save backup file on backup server
       delegate_to: "{{ backup_server }}"
       copy:
-        content: "{{ backup.stdout | default(backup.stdout_lines | join('\n')) }}"
+        content: "{{ normalized_config | default(raw_config) }}"
         dest: "{{ backup_root }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
       register: saved_backup
 
