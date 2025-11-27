@@ -1,11 +1,11 @@
 ---
 - name: Backup all devices
-  hosts: all
+  hosts: all          # ios, nxos 다 포함
   gather_facts: no
 
   vars:
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    backup_dir: "backups/{{ inventory_hostname }}"   # ← 장비별 폴더
+    backup_dir: "/data/network-backups/{{ inventory_hostname }}"
 
   tasks:
     - name: Backup config
