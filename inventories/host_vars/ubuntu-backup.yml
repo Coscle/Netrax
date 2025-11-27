@@ -1,4 +1,4 @@
-ansible_host: 192.168.0.35
+ansible_host: 192.168.0.135
 ansible_connection: ssh
 ansible_user: netrax_admin
 ansible_password: VMware1!
