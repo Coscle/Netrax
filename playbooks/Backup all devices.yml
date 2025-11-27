@@ -5,13 +5,13 @@
   
   vars:
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    backup_dir: "backups/{{ inventory_hostname }
+    backup_dir: "backups/{{ inventory_hostname }}"
   
   tasks:
     - name: Backup config
       ansible.netcommon.cli_command:
         command: show run
-      register: output
+      register: backup
 
     - name: Save backup to file
       delegate_to: localhost
