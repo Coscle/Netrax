@@ -75,7 +75,7 @@
     - name: Send email for first backup
       when: is_first_backup
       delegate_to: "{{ backup_server }}"
-      mail:
+      ansible.builtin.mail:
         host: "{{ smtp_host }}"
         port: "{{ smtp_port }}"
         username: "{{ smtp_user | default(omit) }}"
@@ -96,7 +96,7 @@
         - not is_first_backup
         - diff_result.rc == 1      # 0: 동일, 1: 차이 있음
       delegate_to: "{{ backup_server }}"
-      mail:
+      ansible.builtin.mail:
         host: "{{ smtp_host }}"
         port: "{{ smtp_port }}"
         username: "{{ smtp_user | default(omit) }}"
