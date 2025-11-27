@@ -4,10 +4,8 @@
   gather_facts: no
 
   vars:
-    # 예: 20251127-123000
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    # EE 컨테이너에서의 프로젝트 디렉터리 아래에 backup 폴더 사용
-    backup_base_dir: "/runner/project/backups"
+    backup_dir: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}"
 
   tasks:
     - name: Backup config
@@ -18,7 +16,7 @@
     - name: Ensure backup directory exists on PVC
       delegate_to: localhost
       file:
-        path: "{{ backup_base_dir }}/{{ inventory_hostname }}"
+        path: "{{ backup_dir }}"
         state: directory
         mode: '0755'
 
@@ -26,4 +24,4 @@
       delegate_to: localhost
       copy:
         content: "{{ backup.stdout[0] | default(backup.stdout) }}"
-        dest: "{{ backup_base_dir }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
+        dest: "{{ backup_dir }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
