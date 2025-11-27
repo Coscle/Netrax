@@ -1,27 +1,28 @@
 ---
 - name: Backup all devices
-  hosts: all
+  hosts: nxos:ios        # 장비들만 대상 (backup_server 그룹은 제외)
   gather_facts: no
 
   vars:
     backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
-    backup_dir: "{{ playbook_dir }}/../backups/{{ inventory_hostname }}"
+    backup_server: ubuntu-backup              # 인벤토리의 백업 서버 호스트명
+    backup_root: /data/network-backups        # 우분투 서버에 만들 디렉터리 루트
 
   tasks:
-    - name: Backup config
+    - name: Backup config from device
       ansible.netcommon.cli_command:
         command: show run
       register: backup
 
-    - name: Ensure backup directory exists on PVC
-      delegate_to: localhost
+    - name: Ensure backup directory exists on backup server
+      delegate_to: "{{ backup_server }}"
       file:
-        path: "{{ backup_dir }}"
+        path: "{{ backup_root }}/{{ inventory_hostname }}"
         state: directory
         mode: '0755'
 
-    - name: Save backup to file on PVC
-      delegate_to: localhost
+    - name: Save backup file on backup server
+      delegate_to: "{{ backup_server }}"
       copy:
         content: "{{ backup.stdout[0] | default(backup.stdout) }}"
-        dest: "{{ backup_dir }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
+        dest: "{{ backup_root }}/{{ inventory_hostname }}/{{ inventory_hostname }}-{{ backup_timestamp }}.cfg"
