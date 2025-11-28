@@ -71,7 +71,7 @@
     # 4) 인터페이스 Access 구성
     - name: Configure access port
       vars:
-        iface_desc: "{{ department }} - {{ employee_name }})"
+        iface_desc: "{{ department }} - {{ employee_name }}"
       cisco.ios.ios_config:
         parents: "interface {{ access_interface }}"
         lines: >
