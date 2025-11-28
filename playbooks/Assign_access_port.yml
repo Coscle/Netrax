@@ -4,9 +4,7 @@
   gather_facts: no
 
   vars:
-    # ---- 공통 설정 ----
     backup_server: ubuntu-backup
-    backup_root: /data/network-backups
 
     # SMTP (이미 백업 플레이북에서 쓰던 값 재사용 가능)
     smtp_host: "smtp.gmail.com"      # 회사 SMTP 서버 주소
@@ -15,7 +13,7 @@
     smtp_pass: "mlbblfzggsnzwkdp"            # 가능하면 나중에 Credential로 빼기
     notify_mail_to: "genarain7@gmail.com"  # 알림 받을 메일 주소
 
-    # 부서별 VLAN 맵 (원하면 all.yml 이나 별도 vars로 빼도 됨)
+    # 부서별 VLAN 
     dept_vlan_map:
       HR:
         data: 10
