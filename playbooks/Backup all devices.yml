@@ -1,6 +1,6 @@
 ---
 - name: Backup all devices and notify on change
-  hosts: nxos:ios          # 장비들만 대상 (backup_server 그룹은 제외)
+  hosts: nxos:ios:asa          # 장비들만 대상 (backup_server 그룹은 제외)
   gather_facts: no
 
   vars:
