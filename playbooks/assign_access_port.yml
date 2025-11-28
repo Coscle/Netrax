@@ -1,0 +1,125 @@
+---
+- name: Assign access port for new employee
+  hosts: "{{ target_switch }}"
+  gather_facts: no
+
+  vars:
+    # ---- 공통 설정 ----
+    backup_server: ubuntu-backup
+    backup_root: /data/network-backups
+
+    # SMTP (이미 백업 플레이북에서 쓰던 값 재사용 가능)
+    smtp_host: "smtp.gmail.com"      # 회사 SMTP 서버 주소
+    smtp_port: 587                     # 25, 465, 587 중 하나
+    smtp_user: "netrax99@gmail.com"   # 필요 없으면 삭제
+    smtp_pass: "mlbblfzggsnzwkdp"            # 가능하면 나중에 Credential로 빼기
+    notify_mail_to: "genarain7@gmail.com"  # 알림 받을 메일 주소
+
+    # 부서별 VLAN 맵 (원하면 all.yml 이나 별도 vars로 빼도 됨)
+    dept_vlan_map:
+      HR:
+        data: 10
+      Sales:
+        data: 20
+      Finance:
+        data: 30
+      IT:
+        data: 40
+    default_data_vlan: 10
+  
+  tasks:
+    - name: Show basic info
+      debug:
+        msg:
+          - "Target switch    : {{ inventory_hostname }}"
+          - "Interface        : {{ access_interface }}"
+          - "Employee         : {{ employee_name }}"
+          - "Department       : {{ department }}"
+
+    # 1) 부서 → VLAN 매핑
+    - name: Calculate data VLAN from department
+      set_fact:
+        data_vlan: >-
+          {{ (dept_vlan_map.get(department, {})).data
+             | default(default_data_vlan) }}
+
+    # 2) 현재 인터페이스 설정 조회 (변경 전 VLAN 파악용)
+    - name: Get current interface config
+      cisco.ios.ios_command:
+        commands:
+          - "show run interface {{ access_interface }}"
+      register: before_int
+
+    - name: Extract old access VLAN from config (if any)
+      set_fact:
+        old_access_vlan: >-
+          {{ before_int.stdout[0] |
+             regex_search('switchport access vlan (\\d+)', '\\1')
+             | default('NONE', true) }}
+
+    # 3) VLAN 존재 여부와 상관없이 생성(있으면 그대로 유지)
+    - name: Ensure data VLAN exists
+      cisco.ios.ios_config:
+        lines:
+          - "vlan {{ data_vlan }}"
+          - " name {{ department | upper }}_DATA"
+      when: data_vlan is defined
+
+    - name: Ensure voice VLAN exists (if voice required)
+      when: voice_required | default(true)
+      cisco.ios.ios_config:
+        lines:
+          - "vlan {{ voice_vlan }}"
+          - " name {{ department | upper }}_VOICE"
+
+    # 4) 인터페이스 Access 구성
+    - name: Configure access port
+      vars:
+        iface_desc: "{{ department }} - {{ employee_name }})"
+      cisco.ios.ios_config:
+        parents: "interface {{ access_interface }}"
+        lines: >
+          description {{ iface_desc }}
+          switchport mode access
+          switchport access vlan {{ data_vlan }}
+          spanning-tree portfast
+          spanning-tree bpduguard enable
+          no shutdown
+      register: port_cfg
+
+    # 5) running-config 저장 (옵션)
+    - name: Save running-config
+      when: port_cfg.changed
+      cisco.ios.ios_command:
+        commands:
+          - write memory
+
+    # 6) 이메일 알림
+    - name: Send notification email
+      when: port_cfg.changed
+      delegate_to: "{{ backup_server }}"
+      ansible.builtin.mail:
+        host: "{{ smtp_host }}"
+        port: "{{ smtp_port }}"
+        username: "{{ smtp_user | default(omit) }}"
+        password: "{{ smtp_pass | default(omit) }}"
+        to: "{{ notify_mail_to }}"
+        subject: "[NETRAX] 신규 직원 포트 할당 - {{ employee_name }} / {{ inventory_hostname }} {{ access_interface }}"
+        body: |
+          신규 직원 포트 할당 작업이 완료되었습니다.
+
+          ■ 직원 정보
+            - 이름      : {{ employee_name }}
+            - 사번      : {{ employee_id }}
+            - 부서      : {{ department }}
+
+          ■ 장비 / 포트
+            - 스위치    : {{ inventory_hostname }}
+            - 인터페이스: {{ access_interface }}
+
+          ■ VLAN 정보
+            - 이전 Access VLAN : {{ old_access_vlan }}
+            - 신규 Access VLAN : {{ data_vlan }}
+
+
+          이 메일은 Ansible AWX 자동화 작업에 의해 발송되었습니다.
