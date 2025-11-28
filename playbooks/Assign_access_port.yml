@@ -74,13 +74,13 @@
         iface_desc: "{{ department }} - {{ employee_name }}"
       cisco.ios.ios_config:
         parents: "interface {{ access_interface }}"
-        lines: >
-          description {{ iface_desc }}
-          switchport mode access
-          switchport access vlan {{ data_vlan }}
-          spanning-tree portfast
-          spanning-tree bpduguard enable
-          no shutdown
+        lines: 
+          - description {{ iface_desc }}
+          - switchport mode access
+          - switchport access vlan {{ data_vlan }}
+          - spanning-tree portfast
+          - spanning-tree bpduguard enable
+          - no shutdown
       register: port_cfg
 
     # 5) running-config 저장 (옵션)
