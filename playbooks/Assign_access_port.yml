@@ -48,12 +48,17 @@
           - "show run interface {{ access_interface }}"
       register: before_int
 
+    # 2-1) 인터페이스 설정에서 access vlan 라인이 있는지 확인
     - name: Extract old access VLAN from config (if any)
       set_fact:
-        old_access_vlan: >-
-          {{ before_int.stdout[0] |
-             regex_search('switchport access vlan (\\d+)', '\\1')
-             | default('NONE', true) }}
+        old_access_vlan: "{{ before_int.stdout[0] | regex_search('switchport access vlan (\\d+)', '\\1') }}"
+      when: before_int.stdout[0] is search('switchport access vlan (\\d+)')
+
+    # 2-2) access vlan 이 없으면 NONE 으로 기본값 세팅
+    - name: Set old_access_vlan to NONE when not present
+      set_fact:
+        old_access_vlan: "NONE"
+      when: old_access_vlan is not defined
 
     # 3) VLAN 존재 여부와 상관없이 생성(있으면 그대로 유지)
     - name: Ensure data VLAN exists
