@@ -106,7 +106,6 @@
 
           ■ 직원 정보
             - 이름      : {{ employee_name }}
-            - 사번      : {{ employee_id }}
             - 부서      : {{ department }}
 
           ■ 장비 / 포트
