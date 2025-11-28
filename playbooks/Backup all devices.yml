@@ -97,6 +97,11 @@
       failed_when: diff_result.rc not in [0, 1]
       changed_when: diff_result.rc == 1
 
+    - name: Debug diff_result
+      debug:
+        var: diff_result
+      when: diff_result is defined
+
     # # 6) 이전 백업이 있을 때만 diff 수행
     # - name: Diff with previous backup
     #   when: not is_first_backup
@@ -129,9 +134,7 @@
     - name: Send email when config changed
       when:
         - not is_first_backup
-        - diff_result is defined        # 먼저 변수 존재 여부 체크
-        - diff_result.rc is defined     # rc 필드 존재 여부 체크
-        - diff_result.rc == 1           # 문자열이어도 int로 변환해서 비교
+        - diff_result.changed | default(false)
       delegate_to: "{{ backup_server }}"
       ansible.builtin.mail:
         host: "{{ smtp_host }}"
