@@ -6,11 +6,9 @@ all:
     ios:
       hosts:
         Access-1: {}
-
     asa:
       hosts:
         ASA-1: {}
-    
     backup_server:
       hosts:
         ubuntu-backup: {}
