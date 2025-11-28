@@ -62,11 +62,29 @@
              if (backup_files.files | length) > 1 else None }}
         is_first_backup: "{{ (backup_files.files | length) == 1 }}"
 
-    # 6) 이전 백업이 있을 때만 diff 수행
-    - name: Diff with previous backup
+     # 6) 이전 백업이 있을 때만 diff 수행
+    #   - NX-OS: !Time 줄은 무시하고 비교
+    #   - 그 외 장비: 기존처럼 그대로 diff
+    - name: Diff with previous backup (ignore NX-OS !Time header)
       when: not is_first_backup
       delegate_to: "{{ backup_server }}"
-      command: diff -u "{{ previous_file }}" "{{ latest_file }}"
+      command: |
+        bash -lc '
+        # 최신 백업 파일이 NX-OS 형식인지 체크
+        if grep -q "^!Command: show running-config" "{{ latest_file }}"; then
+          # NX-OS: 매번 바뀌는 !Time 줄은 제거하고 비교
+          sed -E "/^!Time:/d" "{{ previous_file }}" \
+            > /tmp/prev_{{ inventory_hostname }}.cfg
+
+          sed -E "/^!Time:/d" "{{ latest_file }}" \
+            > /tmp/last_{{ inventory_hostname }}.cfg
+
+          diff -u /tmp/prev_{{ inventory_hostname }}.cfg /tmp/last_{{ inventory_hostname }}.cfg
+        else
+          # IOS 등 나머지는 원본 그대로 비교
+          diff -u "{{ previous_file }}" "{{ latest_file }}"
+        fi
+        '
       register: diff_result
       failed_when: diff_result.rc not in [0, 1]    # 0: 같음, 1: 다름, 그 외: 에러
       changed_when: diff_result.rc == 1
