@@ -3,4 +3,5 @@ collections:
   - name: ansible.netcommon
   - name: cisco.nxos
   - name: cisco.ios
+  - name: cisco.asa
   - name: community.general
