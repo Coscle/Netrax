@@ -68,13 +68,6 @@
           - " name {{ department | upper }}_DATA"
       when: data_vlan is defined
 
-    - name: Ensure voice VLAN exists (if voice required)
-      when: voice_required | default(true)
-      cisco.ios.ios_config:
-        lines:
-          - "vlan {{ voice_vlan }}"
-          - " name {{ department | upper }}_VOICE"
-
     # 4) 인터페이스 Access 구성
     - name: Configure access port
       vars:
