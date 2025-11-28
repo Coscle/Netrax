@@ -7,10 +7,10 @@ all:
       hosts:
         Access-1: {}
 
+    asa:
+      hosts:
+        ASA-1: {}
+    
     backup_server:
       hosts:
         ubuntu-backup: {}
-
-    #asa:
-      #hosts:
-        #HQ-ASA: {}
