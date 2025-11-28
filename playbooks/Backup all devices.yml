@@ -129,7 +129,8 @@
     - name: Send email when config changed
       when:
         - not is_first_backup
-        - diff_result.rc == 1      # 0: 동일, 1: 차이 있음
+        - diff_result is defined
+        - diff_result.get('rc', 0) == 1    # rc가 없으면 0으로 간주
       delegate_to: "{{ backup_server }}"
       ansible.builtin.mail:
         host: "{{ smtp_host }}"
