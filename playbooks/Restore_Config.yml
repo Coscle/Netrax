@@ -36,15 +36,13 @@
       when: ansible_network_os == "cisco.ios.ios"
       cisco.ios.ios_config:
         lines: "{{ restore_lines }}"
-        replace: config        # 전체 config 기준으로 맞춤
-        save_when: always      # write memory까지 같이
+        save_when: always    
 
     # 4-2) NX-OS 장비 복구 (HQ-Core-N5K-1 같은 것)
     - name: Push full config to NX-OS
       when: ansible_network_os == "cisco.nxos.nxos"
       cisco.nxos.nxos_config:
         lines: "{{ restore_lines }}"
-        replace: config
         save_when: always
 
     # 4-3) ASA 복구 (원하면 나중에 튜닝)
