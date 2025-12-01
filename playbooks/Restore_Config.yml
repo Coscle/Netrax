@@ -24,11 +24,25 @@
       register: restore_raw
       changed_when: false
 
+     # 2-1) 디버그 - slurp로 읽어온 원본 내용(복호화) 확인
+    #       (실제 장비 config 그대로라, 필요하면 잠깐만 켜두고 나중엔 주석 처리해도 됨)
+    - name: Debug decoded restore file content
+      ansible.builtin.debug:
+        msg: "{{ restore_raw.content | b64decode }}"
+
     # 3) Base64 → 텍스트 → 줄 리스트로 변환
     - name: Build restore_lines fact
       ansible.builtin.set_fact:
         restore_lines: "{{ (restore_raw.content | b64decode).split('\n') }}"
 
+    # 3-1) 디버그 - 몇 줄인지 + 앞부분만 확인
+    - name: Debug restore_lines summary
+      ansible.builtin.debug:
+        msg:
+          - "Total lines in restore_lines: {{ restore_lines | length }}"
+          - "First 10 lines:"
+          - "{{ restore_lines[0:10] | join('\n') }}"
+          
     # === 여기서부터 OS 별로 복구 ===
 
     # 4-1) IOS 장비 복구 (Access-1 같은 것)
