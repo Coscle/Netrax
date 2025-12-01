@@ -4,33 +4,53 @@
 
   vars:
     backup_root: /data/network-backups
-    restore_file: "{{ backup_root }}/{{ target_device }}/{{ restore_filename }}"
+    backup_server: ubuntu-backup
+    restore_file: "{{ backup_root }}/{{ inventory_hostname }}/{{ restore_filename }}"
+
 
   tasks:
     - name: Show info
       debug:
         msg:
-          - "RESTORE DEVICE : {{ target_device }}"
+          - "RESTORE DEVICE : {{ inventory_hostname }}"
           - "RESTORE FILE   : {{ restore_file }}"
 
-    - name: Push config to device
-      cisco.nxos.nxos_config:
+    # 1) 백업 서버에서 config 파일 내용 읽어오기
+    - name: Read restore file from backup server
+      delegate_to: "{{ backup_server }}"
+      slurp:
         src: "{{ restore_file }}"
-        replace: config
-      when: ansible_network_os == "cisco.nxos.nxos"
+      register: restore_raw
 
-    - name: Push config to device
-      cisco.ios.ios_config:
-        src: "{{ restore_file }}"
-        replace: config
+    # 2) base64 → text → 줄 리스트로 변환
+    - name: Build restore_lines fact
+      set_fact:
+        restore_lines: >-
+          {{ restore_raw.content | b64decode | splitlines() }}
+
+    # 3) IOS 장비 복구
+    - name: Push full config to IOS
       when: ansible_network_os == "cisco.ios.ios"
+      cisco.ios.ios_config:
+        lines: "{{ restore_lines }}"
+        replace: config
 
-    - name: Push config to ASA
-      cisco.asa.asa_config:
-        src: "{{ restore_file }}"
+    # 4) NX-OS 장비 복구
+    - name: Push full config to NX-OS
+      when: ansible_network_os == "cisco.nxos.nxos"
+      cisco.nxos.nxos_config:
+        lines: "{{ restore_lines }}"
+        replace: config
+
+    # 5) ASA 복구 (asa_config도 비슷한 방식)
+    - name: Push full config to ASA
       when: ansible_network_os == "cisco.asa.asa"
+      cisco.asa.asa_config:
+        lines: "{{ restore_lines }}"
+        replace: config   # asa 모듈은 replace 옵션 없으면 생략
 
-    - name: Save config
+    # 6) IOS는 write memory까지
+    - name: Save IOS config
+      when: ansible_network_os == "cisco.ios.ios"
       ios_command:
         commands: "write memory"
-      when: ansible_network_os == "cisco.ios.ios"
