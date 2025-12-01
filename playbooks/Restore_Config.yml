@@ -1,0 +1,36 @@
+- name: Restore config from backup file
+  hosts: "{{ target_device }}"
+  gather_facts: no
+
+  vars:
+    backup_root: /data/network-backups
+    restore_file: "{{ backup_root }}/{{ target_device }}/{{ restore_filename }}"
+
+  tasks:
+    - name: Show info
+      debug:
+        msg:
+          - "RESTORE DEVICE : {{ target_device }}"
+          - "RESTORE FILE   : {{ restore_file }}"
+
+    - name: Push config to device
+      cisco.nxos.nxos_config:
+        src: "{{ restore_file }}"
+        replace: config
+      when: ansible_network_os == "cisco.nxos.nxos"
+
+    - name: Push config to device
+      cisco.ios.ios_config:
+        src: "{{ restore_file }}"
+        replace: config
+      when: ansible_network_os == "cisco.ios.ios"
+
+    - name: Push config to ASA
+      cisco.asa.asa_config:
+        src: "{{ restore_file }}"
+      when: ansible_network_os == "cisco.asa.asa"
+
+    - name: Save config
+      ios_command:
+        commands: "write memory"
+      when: ansible_network_os == "cisco.ios.ios"
