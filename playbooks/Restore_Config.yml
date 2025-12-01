@@ -1,56 +1,55 @@
+---
 - name: Restore config from backup file
   hosts: "{{ target_device }}"
   gather_facts: no
 
   vars:
-    backup_root: /data/network-backups
-    backup_server: ubuntu-backup
-    restore_file: "{{ backup_root }}/{{ inventory_hostname }}/{{ restore_filename }}"
-
+    backup_server: ubuntu-backup              # 백업 서버 인벤토리 이름
+    backup_root: /data/network-backups        # 백업 루트 디렉터리
+    restore_file: "{{ backup_root }}/{{ target_device }}/{{ restore_filename }}"
 
   tasks:
+    # 1) 어떤 장비 / 어떤 파일로 복구하는지 출력
     - name: Show info
-      debug:
+      ansible.builtin.debug:
         msg:
           - "RESTORE DEVICE : {{ inventory_hostname }}"
           - "RESTORE FILE   : {{ restore_file }}"
 
-    # 1) 백업 서버에서 config 파일 내용 읽어오기
+    # 2) 백업 서버에서 해당 파일 내용 읽어오기 (Base64)
     - name: Read restore file from backup server
       delegate_to: "{{ backup_server }}"
-      slurp:
+      ansible.builtin.slurp:
         src: "{{ restore_file }}"
       register: restore_raw
+      changed_when: false
 
-    # 2) base64 → text → 줄 리스트로 변환
+    # 3) Base64 → 텍스트 → 줄 리스트로 변환
     - name: Build restore_lines fact
-      set_fact:
-        restore_lines: >-
-          {{ restore_raw.content | b64decode | splitlines() }}
+      ansible.builtin.set_fact:
+        restore_lines: "{{ (restore_raw.content | b64decode).split('\n') }}"
 
-    # 3) IOS 장비 복구
+    # === 여기서부터 OS 별로 복구 ===
+
+    # 4-1) IOS 장비 복구 (Access-1 같은 것)
     - name: Push full config to IOS
       when: ansible_network_os == "cisco.ios.ios"
       cisco.ios.ios_config:
         lines: "{{ restore_lines }}"
-        replace: config
+        replace: config        # 전체 config 기준으로 맞춤
+        save_when: always      # write memory까지 같이
 
-    # 4) NX-OS 장비 복구
+    # 4-2) NX-OS 장비 복구 (HQ-Core-N5K-1 같은 것)
     - name: Push full config to NX-OS
       when: ansible_network_os == "cisco.nxos.nxos"
       cisco.nxos.nxos_config:
         lines: "{{ restore_lines }}"
         replace: config
+        save_when: always
 
-    # 5) ASA 복구 (asa_config도 비슷한 방식)
+    # 4-3) ASA 복구 (원하면 나중에 튜닝)
     - name: Push full config to ASA
       when: ansible_network_os == "cisco.asa.asa"
       cisco.asa.asa_config:
         lines: "{{ restore_lines }}"
-        replace: config   # asa 모듈은 replace 옵션 없으면 생략
-
-    # 6) IOS는 write memory까지
-    - name: Save IOS config
-      when: ansible_network_os == "cisco.ios.ios"
-      ios_command:
-        commands: "write memory"
+        # ASA 모듈은 replace 옵션이 없어서, 전체 config 텍스트를 merge하는 형태야.
