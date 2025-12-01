@@ -99,14 +99,32 @@
         username: "{{ smtp_user | default(omit) }}"
         password: "{{ smtp_pass | default(omit) }}"
         to: "{{ notify_mail_to }}"
-        subject: "[NETRAX] {{ inventory_hostname }} 첫 백업 생성"
+        subject: "[NETRAX-INFO] {{ inventory_hostname }} 첫 백업 생성 (Baseline)"
+        subtype: html
         body: |
-          {{ inventory_hostname }} 장비의 첫 백업이 생성되었습니다.
+          <html>
+          <body style="font-family: Arial, sans-serif;">
+            <h3 style="color: #1a73e8;">✅ 첫 백업 생성 완료 알림</h3>
+            <p><strong>{{ inventory_hostname }}</strong> 장비의 첫 설정 백업이 성공적으로 생성되었습니다. 이 백업 파일은 향후 설정 변경 감지의 <strong>기준(Baseline)</strong>으로 사용됩니다.</p>
+            
+            <table style="border-collapse: collapse; width: 60%;">
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2; width: 150px;"><strong>장비 호스트명</strong></td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ inventory_hostname }}</td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;"><strong>백업 시간</strong></td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ backup_timestamp }}</td>
+              </tr>
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;"><strong>저장 경로</strong></td>
+                <td style="border: 1px solid #ddd; padding: 8px;">{{ latest_file }}</td>
+              </tr>
+            </table>
 
-          백업 파일:
-            {{ latest_file }}
-
-          이 백업은 향후 변경 감지 기준이 되는 baseline 입니다.
+            <p style="margin-top: 20px; font-size: 12px; color: #757575;">이 메일은 네트워크 자동화 시스템(NETRAX)에서 발송되었습니다.</p>
+          </body>
+          </html>
 
     # 8) 이전 백업과 내용이 달라졌을 때만 메일 발송
     - name: Send email when config changed
@@ -120,14 +138,25 @@
         username: "{{ smtp_user | default(omit) }}"
         password: "{{ smtp_pass | default(omit) }}"
         to: "{{ notify_mail_to }}"
-        subject: "[NETRAX] {{ inventory_hostname }} 설정 변경 감지"
+        subject: "[NETRAX-ALERT] 설정 변경 감지: {{ inventory_hostname }}"
+        subtype: html
         body: |
-          {{ inventory_hostname }} 장비에서 설정 변경이 감지되었습니다.
+          <html>
+          <body style="font-family: Arial, sans-serif;">
+            <h3 style="color: #d93025;">🚨 설정 변경 감지 알림</h3>
+            <p><strong>{{ inventory_hostname }}</strong> 장비에서 이전 백업과 비교하여 설정 변경이 감지되었습니다. 의도하지 않은 변경인지 확인하십시오.</p>
 
-          이전 백업: {{ previous_file }}
-          최신 백업: {{ latest_file }}
+            <p><strong>변경 비교 대상:</strong></p>
+            <ul style="list-style-type: none; padding-left: 0;">
+              <li><strong>이전 백업:</strong> {{ previous_file }}</li>
+              <li><strong>최신 백업:</strong> {{ latest_file }} ({{ backup_timestamp }})</li>
+            </ul>
 
-          변경 내용 (diff -u):
-          ------------------------------------------------------------
-          {{ diff_result.stdout }}
-          ------------------------------------------------------------
+            <h4 style="color: #202124;">📜 변경 내용 (Diff Output)</h4>
+            <pre style="background-color: #f8f9fa; border: 1px solid #dadce0; padding: 15px; overflow-x: auto; font-family: monospace, Courier New; font-size: 14px;">
+{{ diff_result.stdout }}
+            </pre>
+
+            <p style="margin-top: 20px; font-size: 12px; color: #757575;">이 메일은 네트워크 자동화 시스템(NETRAX)에서 발송되었습니다.</p>
+          </body>
+          </html>
