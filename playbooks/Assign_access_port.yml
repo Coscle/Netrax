@@ -113,21 +113,22 @@
         username: "{{ smtp_user | default(omit) }}"
         password: "{{ smtp_pass | default(omit) }}"
         to: "{{ notify_mail_to }}"
-        subject: "[NETRAX] 신규 직원 포트 할당 - {{ employee_name }} / {{ inventory_hostname }} {{ access_interface }}"
+        subject: "[NETRAX] 신규 직원 포트 할당 - {{ inventory_hostname }} / {{ access_interface }}"
         body: |
           신규 직원 포트 할당 작업이 완료되었습니다.
 
-          ■ 직원 정보
-            - 이름      : {{ employee_name }}
-            - 부서      : {{ department }}
+          ■ 부서
+            - Department : {{ department }}
+            - VLAN       : {{ data_vlan }}
+
+          ■ 인터페이스 범위 (입력값 기준)
+            - {{ access_interface }}
 
           ■ 장비 / 포트
             - 스위치    : {{ inventory_hostname }}
             - 인터페이스: {{ access_interface }}
 
-          ■ VLAN 정보
-            - 이전 Access VLAN : {{ old_access_vlan }}
-            - 신규 Access VLAN : {{ data_vlan }}
+          이 메일은 Ansible AWX 자동화 작업에 의해 발송되었습니다.
 
 
           이 메일은 Ansible AWX 자동화 작업에 의해 발송되었습니다.
