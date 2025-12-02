@@ -1,14 +1,29 @@
 all:
   children:
+
     nxos:
       hosts:
         HQ-Core-N5K-1: {}
+        HQ-BB-N5K-1: {}
+        HQ-BB-N5K-2: {}
+        HQ-DW-N3K-1: {}
+        HQ-DW-N3K-2: {}
+
     ios:
       hosts:
         Access-1: {}
+        HQ-Internet-R-1: {}
+        HQ-Internet-R-2: {}
+        HQ-Gate-L2-1: {}
+        HQ-Gate-L2-2: {}
+        LQ-L2-S: {}
+
     asa:
       hosts:
         ASA-1: {}
+        HQ-FAIL-ASA-1: {}
+        HQ-FAIL-ASA-2: {}
+
     backup_server:
       hosts:
         ubuntu-backup: {}
