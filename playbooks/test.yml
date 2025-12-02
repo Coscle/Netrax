@@ -1,0 +1,9 @@
+---
+- name: Test host_vars
+  hosts: HQ-Gate-L2-2
+  gather_facts: no
+
+  tasks:
+    - name: Show ansible_host
+      debug:
+        msg: "I will connect to {{ inventory_hostname }} ({{ ansible_host }})"
