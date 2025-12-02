@@ -79,7 +79,7 @@
         commands:
           - write memory
 
-    # 5) 이메일 알림
+    # 5) 이메일 알림 (예쁜 버전)
     - name: Send notification email
       when: port_cfg.changed
       delegate_to: "{{ backup_server }}"
@@ -89,19 +89,35 @@
         username: "{{ smtp_user | default(omit) }}"
         password: "{{ smtp_pass | default(omit) }}"
         to: "{{ notify_mail_to }}"
-        subject: "[NETRAX] 신규 직원 포트 할당 - {{ inventory_hostname }} / {{ access_interface }}"
+        subject: "🔔 [NETRAX 자동화] Access 포트 설정 완료 – {{ inventory_hostname }}"
         body: |
-          신규 직원 포트 할당 작업이 완료되었습니다.
+          📡 NETRAX 네트워크 자동화 시스템 알림
+    
+          신규 직원/자리 배치를 위한 Access Port 구성이
+          성공적으로 완료되었습니다. 🎉
+    
+          ───────────────────────────────
+          🔷 < 부서 & VLAN 정보 >
+          • 부서(Department) : {{ department }}
+          • Access VLAN      : {{ data_vlan }}
+    
+          🔷 < 적용된 인터페이스 >
+          • 대상 스위치      : {{ inventory_hostname }}
+          • 인터페이스 입력  : {{ access_interface }}
+    
+          🔷 < 적용된 공통 설정 >
+          • description {{ department | upper }}
+          • switchport mode access
+          • switchport access vlan {{ data_vlan }}
+          • spanning-tree portfast edge
+          • spanning-tree bpduguard enable
+          • no shutdown
+    
+          ───────────────────────────────
+          🛠 작업 상세
+          본 작업은 Ansible AWX 자동화 플레이북
+          "Assign access port for employee" 에 의해 수행되었습니다.
+    
+          문제가 발생할 경우 네트워크팀에 문의해주세요.
+          감사합니다. 🙂
 
-          ■ 부서
-            - Department : {{ department }}
-            - VLAN       : {{ data_vlan }}
-
-          ■ 인터페이스 범위 (입력값 기준)
-            - {{ access_interface }}
-
-          ■ 장비 / 포트
-            - 스위치    : {{ inventory_hostname }}
-            - 인터페이스: {{ access_interface }}
-
-          이 메일은 Ansible AWX 자동화 작업에 의해 발송되었습니다.
