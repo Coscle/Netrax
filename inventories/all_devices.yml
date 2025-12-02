@@ -10,7 +10,7 @@ all:
           ansible_host: 192.168.0.42
         HQ-Gate-L2-2:
           ansible_host: 192.168.0.39
-        LQ-L2-S:
+        LQ-L2-SW:
           ansible_host: 192.168.0.50
         HQ-BB-N5K-1:
           ansible_host: 192.168.0.46
