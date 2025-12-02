@@ -1,25 +1,25 @@
 all:
   children:
-    nxos:
-      hosts:
-        HQ-Core-N5K-1: {}
-        HQ-BB-N5K-1: {}
-        HQ-BB-N5K-2: {}
-        HQ-DW-N3K-1: {}
-        HQ-DW-N3K-2: {}
     ios:
       hosts:
-        Access-1: {}
-        HQ-Internet-R-1: {}
-        HQ-Internet-R-2: {}
-        HQ-Gate-L2-1: {}
-        HQ-Gate-L2-2: {}
-        LQ-L2-S: {}
+        HQ-Gate-L2-1:
+          ansible_host: 192.168.0.42
+        HQ-Gate-L2-2:
+          ansible_host: 192.168.0.39
+        LQ-L2-S:
+          ansible_host: 192.168.0.50
+        HQ-Internet-R-1:
+          ansible_host: 192.168.0.40
+        HQ-Internet-R-2:
+          ansible_host: 192.168.0.26
+        HQ-BB-N5K-1:
+          ansible_host: 192.168.0.46
+        HQ-BB-N5K-2:
+          ansible_host: 192.168.0.47
     asa:
       hosts:
-        ASA-1: {}
-        HQ-FAIL-ASA-1: {}
-        HQ-FAIL-ASA-2: {}
+        HQ-FAIL-ASA-1:
+          ansible_host: 192.168.0.54
     backup_server:
       hosts:
         ubuntu-backup: {}
