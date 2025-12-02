@@ -3,9 +3,9 @@ all:
     ios:
       hosts:
         HQ-Internet-R-1:
-          ansible_host: 192.168.0.40
+          ansible_host: 192.168.0.107
         HQ-Internet-R-2:
-          ansible_host: 192.168.0.26
+          ansible_host: 192.168.0.77
         HQ-Gate-L2-1:
           ansible_host: 192.168.0.42
         HQ-Gate-L2-2:
