@@ -1,5 +1,5 @@
 ---
-- name: Assign access port for new employee
+- name: Assign access port for employee
   hosts: "{{ target_switch }}"
   gather_facts: no
 
@@ -80,20 +80,24 @@
           - " name {{ department | upper }}_DATA"
       when: data_vlan is defined
 
-    # 4) 인터페이스 Access 구성
-    - name: Configure access port
+    # 4) 인터페이스 Access 구성 (CLI 그대로 사용)
+    - name: Configure access port(s) with raw CLI
       vars:
-        iface_desc: "{{ department }}"
-      cisco.ios.ios_config:
-        lines: 
-          - {{ access_interface }}
-          - description {{ iface_desc }}
-          - switchport mode access
-          - switchport access vlan {{ data_vlan }}
-          - spanning-tree portfast
-          - spanning-tree bpduguard enable
-          - no shutdown
+        iface_desc: "{{ department | upper }}"
+      ansible.netcommon.cli_command:
+        command: "{{ item }}"
+      loop:
+        - "configure terminal"
+        - "{{ access_interface }}"                # 설문에서 입력한 CLI (예: int e1/1, int r e0/0-3, e1/0-3)
+        - "description {{ iface_desc }}"
+        - "switchport mode access"
+        - "switchport access vlan {{ data_vlan }}"
+        - "spanning-tree portfast edge"
+        - "spanning-tree bpduguard enable"
+        - "no shutdown"
+        - "end"
       register: port_cfg
+      changed_when: true      # cli_command는 기본 changed 플래그가 없어서, 항상 변경으로 취급
 
     # 5) running-config 저장 (옵션)
     - name: Save running-config
@@ -126,8 +130,5 @@
           ■ 장비 / 포트
             - 스위치    : {{ inventory_hostname }}
             - 인터페이스: {{ access_interface }}
-
-          이 메일은 Ansible AWX 자동화 작업에 의해 발송되었습니다.
-
 
           이 메일은 Ansible AWX 자동화 작업에 의해 발송되었습니다.
