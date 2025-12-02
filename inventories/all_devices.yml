@@ -2,20 +2,24 @@ all:
   children:
     ios:
       hosts:
+        HQ-Internet-R-1:
+          ansible_host: 192.168.0.40
+        HQ-Internet-R-2:
+          ansible_host: 192.168.0.26
         HQ-Gate-L2-1:
           ansible_host: 192.168.0.42
         HQ-Gate-L2-2:
           ansible_host: 192.168.0.39
         LQ-L2-S:
           ansible_host: 192.168.0.50
-        HQ-Internet-R-1:
-          ansible_host: 192.168.0.40
-        HQ-Internet-R-2:
-          ansible_host: 192.168.0.26
         HQ-BB-N5K-1:
           ansible_host: 192.168.0.46
         HQ-BB-N5K-2:
           ansible_host: 192.168.0.47
+        HQ-DW-N3K-1:
+          ansible_host: 192.168.0.48
+        HQ-DW-N3K-2:
+          ansible_host: 192.168.0.55
     asa:
       hosts:
         HQ-FAIL-ASA-1:
