@@ -6,44 +6,36 @@
   vars:
     backup_server: ubuntu-backup
 
-    # SMTP (이미 백업 플레이북에서 쓰던 값 재사용 가능)
-    smtp_host: "smtp.gmail.com"      # 회사 SMTP 서버 주소
-    smtp_port: 587                     # 25, 465, 587 중 하나
-    smtp_user: "netrax99@gmail.com"   # 필요 없으면 삭제
-    smtp_pass: "mlbblfzggsnzwkdp"            # 가능하면 나중에 Credential로 빼기
-    notify_mail_to: "genarain7@gmail.com"  # 알림 받을 메일 주소
+    # 기본 VLAN (매핑에 없을 때 fallback)
+    default_data_vlan: 10
 
-    # 부서별 VLAN 
+    # SMTP (이미 백업 플레이북에서 쓰던 값 재사용 가능)
+    smtp_host: "smtp.gmail.com"
+    smtp_port: 587
+    smtp_user: "netrax99@gmail.com"
+    smtp_pass: "mlbblfzggsnzwkdp"
+    notify_mail_to: "genarain7@gmail.com"
+
+    # 부서별 VLAN
     dept_vlan_map:
-      HR:
-        data: 10
-      SALES:
-        data: 20
-      FINANCE:
-        data: 30
-      IT:
-        data: 40
-      LOG1:
-        data: 50
-      LOG2:
-        data: 50
-      LOG3:
-        data: 50
-      LOG4:
-        data: 50
-      MAT:
-        data: 60
-      MKT:
-        data: 70
-      EXEC:
-        data: 80
-  
+      HR:      { data: 10 }
+      SALES:   { data: 20 }
+      FINANCE: { data: 30 }
+      IT:      { data: 40 }
+      LOG1:    { data: 50 }
+      LOG2:    { data: 50 }
+      LOG3:    { data: 50 }
+      LOG4:    { data: 50 }
+      MAT:     { data: 60 }
+      MKT:     { data: 70 }
+      EXEC:    { data: 80 }
+
   tasks:
     - name: Show basic info
       debug:
         msg:
           - "Target switch    : {{ inventory_hostname }}"
-          - "Interface        : {{ access_interface }}"
+          - "Interface CLI    : {{ access_interface }}"
           - "Department       : {{ department }}"
 
     # 1) 부서 → VLAN 매핑
@@ -53,26 +45,7 @@
           {{ (dept_vlan_map.get(department, {})).data
              | default(default_data_vlan) }}
 
-    # 2) 현재 인터페이스 설정 조회 (변경 전 VLAN 파악용)
-    - name: Get current interface config
-      cisco.ios.ios_command:
-        commands:
-          - "show run interface {{ access_interface }}"
-      register: before_int
-
-    # 2-1) 인터페이스 설정에서 access vlan 라인이 있는지 확인
-    - name: Extract old access VLAN from config (if any)
-      set_fact:
-        old_access_vlan: "{{ before_int.stdout[0] | regex_search('switchport access vlan (\\d+)', '\\1') }}"
-      when: before_int.stdout[0] is search('switchport access vlan (\\d+)')
-
-    # 2-2) access vlan 이 없으면 NONE 으로 기본값 세팅
-    - name: Set old_access_vlan to NONE when not present
-      set_fact:
-        old_access_vlan: "NONE"
-      when: old_access_vlan is not defined
-
-    # 3) VLAN 존재 여부와 상관없이 생성(있으면 그대로 유지)
+    # 2) VLAN 존재 여부와 상관없이 생성(있으면 그대로 유지)
     - name: Ensure data VLAN exists
       cisco.ios.ios_config:
         lines:
@@ -80,7 +53,7 @@
           - " name {{ department | upper }}_DATA"
       when: data_vlan is defined
 
-    # 4) 인터페이스 Access 구성 (CLI 그대로 사용)
+    # 3) 인터페이스 Access 구성 (설문에서 받은 CLI를 그대로 사용)
     - name: Configure access port(s) with raw CLI
       vars:
         iface_desc: "{{ department | upper }}"
@@ -88,7 +61,7 @@
         command: "{{ item }}"
       loop:
         - "configure terminal"
-        - "{{ access_interface }}"                # 설문에서 입력한 CLI (예: int e1/1, int r e0/0-3, e1/0-3)
+        - "{{ access_interface }}"               # 예: int e1/1  또는  int r e0/0-3, e1/0-3, e2/0-3
         - "description {{ iface_desc }}"
         - "switchport mode access"
         - "switchport access vlan {{ data_vlan }}"
@@ -97,16 +70,16 @@
         - "no shutdown"
         - "end"
       register: port_cfg
-      changed_when: true      # cli_command는 기본 changed 플래그가 없어서, 항상 변경으로 취급
+      changed_when: true   # cli_command는 changed 정보가 없으니 항상 변경으로 처리
 
-    # 5) running-config 저장 (옵션)
+    # 4) running-config 저장
     - name: Save running-config
       when: port_cfg.changed
       cisco.ios.ios_command:
         commands:
           - write memory
 
-    # 6) 이메일 알림
+    # 5) 이메일 알림
     - name: Send notification email
       when: port_cfg.changed
       delegate_to: "{{ backup_server }}"
