@@ -17,13 +17,26 @@
     dept_vlan_map:
       HR:
         data: 10
-      Sales:
+      SALES:
         data: 20
-      Finance:
+      FINANCE:
         data: 30
       IT:
         data: 40
-    default_data_vlan: 10
+      LOG1:
+        data: 50
+      LOG2:
+        data: 50
+      LOG3:
+        data: 50
+      LOG4:
+        data: 50
+      MAT:
+        data: 60
+      MKT:
+        data: 70
+      EXEC:
+        data: 80
   
   tasks:
     - name: Show basic info
@@ -31,7 +44,6 @@
         msg:
           - "Target switch    : {{ inventory_hostname }}"
           - "Interface        : {{ access_interface }}"
-          - "Employee         : {{ employee_name }}"
           - "Department       : {{ department }}"
 
     # 1) 부서 → VLAN 매핑
@@ -75,6 +87,7 @@
       cisco.ios.ios_config:
         parents: "interface {{ access_interface }}"
         lines: 
+          - {{ access_interface }}
           - description {{ iface_desc }}
           - switchport mode access
           - switchport access vlan {{ data_vlan }}
