@@ -17,7 +17,7 @@
     smtp_host: "smtp.gmail.com"      # 회사 SMTP 서버 주소
     smtp_port: 587                     # 25, 465, 587 중 하나
     smtp_user: "netrax99@gmail.com"   # 필요 없으면 삭제
-    smtp_pass: "mlbblfzggsnzwkdp"            # 가능하면 나중에 Credential로 빼기
+    smtp_pass: "ohqo bcje rqjt gkix"            # 가능하면 나중에 Credential로 빼기
     notify_mail_to: "genarain7@gmail.com"  # 알림 받을 메일 주소
 
   tasks:
