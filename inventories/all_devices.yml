@@ -23,9 +23,9 @@ all:
     asa:
       hosts:
         HQ-FAIL-ASA-1:
-          ansible_host: 192.168.0.181
+          ansible_host: 192.168.0.51
         HQ-FAIL-ASA-2:
-          ansible_host: 192.168.0.182
+          ansible_host: 192.168.0.52
     backup_server:
       hosts:
         ubuntu-backup: {}
