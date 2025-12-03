@@ -5,7 +5,7 @@
 
   vars:
     # 백업 파일명에 붙일 타임스탬프
-    backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+    backup_timestamp: "{{ lookup('pipe', 'TZ=Asia/Seoul date +%Y%m%d-%H%M%S') }}"
 
     # 백업 서버 인벤토리 호스트명 (ubuntu-backup)
     backup_server: ubuntu-backup
