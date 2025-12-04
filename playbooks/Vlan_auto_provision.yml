@@ -1,0 +1,90 @@
+---
+- name: Auto VLAN creation and trunk update
+  hosts: hq
+  gather_facts: no
+
+  vars:
+    vlan_id: "{{ vlan_id }}"
+    vlan_name: "{{ vlan_name }}"
+    trunk_ports:
+      - "port-channel25"
+
+  tasks:
+
+    - name: Show task info
+      debug:
+        msg:
+          - "Target switch: {{ inventory_hostname }}"
+          - "VLAN: {{ vlan_id }} ({{ vlan_name }})"
+
+    # 1) VLAN 생성
+    - name: Create VLAN on IOS
+      when: ansible_network_os == "cisco.ios.ios"
+      cisco.ios.ios_config:
+        lines:
+          - "vlan {{ vlan_id }}"
+          - "name {{ vlan_name }}"
+
+    - name: Create VLAN on NXOS
+      when: ansible_network_os == "cisco.nxos.nxos"
+      cisco.nxos.nxos_config:
+        lines:
+          - "vlan {{ vlan_id }}"
+          - "name {{ vlan_name }}"
+
+    # 2) Trunk 업데이트
+    - name: Update trunk allowed VLANs
+      loop: "{{ trunk_ports }}"
+      loop_control:
+        loop_var: trunk
+      cisco.ios.ios_config:
+        parents: "interface {{ trunk }}"
+        lines:
+          - "switchport trunk allowed vlan add {{ vlan_id }}"
+      when: ansible_network_os == "cisco.ios.ios"
+
+    - name: Update trunk VLANs (NXOS)
+      loop: "{{ trunk_ports }}"
+      loop_control:
+        loop_var: trunk
+      cisco.nxos.nxos_config:
+        parents: "interface {{ trunk }}"
+        lines:
+          - "switchport trunk allowed vlan add {{ vlan_id }}"
+      when: ansible_network_os == "cisco.nxos.nxos"
+
+    # 3) Save
+    - name: Save config (IOS)
+      when: ansible_network_os == "cisco.ios.ios"
+      cisco.ios.ios_command:
+        commands: "write memory"
+
+    - name: Save config (NXOS)
+      when: ansible_network_os == "cisco.nxos.nxos"
+      cisco.nxos.nxos_command:
+        commands: "copy run start"
+
+    # 4) Email Report
+    - name: Send email report
+      delegate_to: ubuntu-backup
+      ansible.builtin.mail:
+        host: smtp.gmail.com
+        port: 587
+        username: "netrax99@gmail.com"
+        password: "mlbblfzggsnzwkdp"
+        to: "genarain7@gmail.com"
+        subject: "[NETRAX] VLAN {{ vlan_id }} ({{ vlan_name }}) 생성 완료"
+        body: |
+          신규 VLAN 생성 및 Trunk 업데이트가 완료되었습니다.
+
+          📌 VLAN 정보
+          - VLAN ID: {{ vlan_id }}
+          - VLAN Name: {{ vlan_name }}
+
+          📌 적용 장비
+          - {{ inventory_hostname }}
+
+          📌 업데이트된 Trunk 포트
+          {{ trunk_ports | join('\n - ') }}
+
+          작업은 AWX 자동화 시스템에 의해 수행되었습니다.
