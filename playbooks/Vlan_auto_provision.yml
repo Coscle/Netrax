@@ -71,7 +71,7 @@
         host: smtp.gmail.com
         port: 587
         username: "netrax99@gmail.com"
-        password: "mlbblfzggsnzwkdp"
+        password: "ohqo bcje rqjt gkix"
         to: "genarain7@gmail.com"
         subject: "[NETRAX] VLAN {{ vlan_id }} ({{ vlan_name }}) 생성 완료"
         body: |
