@@ -85,6 +85,10 @@
           {% for h in ansible_play_hosts %}
           • {{ h }}
           {% endfor %}
+          • BR-CORE-L3SW-1
+          • BR-CORE-L3SW-2
+          • BR-DIST-L3SW-1
+          • BR-DIST-L3SW-2
 
           📌 업데이트된 Trunk 포트
           {{ trunk_ports | join('\n - ') }}
