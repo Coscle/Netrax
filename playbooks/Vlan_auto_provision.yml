@@ -82,7 +82,9 @@
           - VLAN Name: {{ vlan_name }}
 
           📌 적용 장비
-          - {{ inventory_hostname }}
+          {% for h in ansible_play_hosts %}
+          • {{ h }}
+          {% endfor %}
 
           📌 업데이트된 Trunk 포트
           {{ trunk_ports | join('\n - ') }}
